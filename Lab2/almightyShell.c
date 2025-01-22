@@ -59,13 +59,10 @@ int main() {
                 return 1;
             }
         } else {
-            // Parent process - continue executing main program
-            printf("Parent process continues running.\n");
-
             // Wait for the child process to finish
             child = wait(&status);
             // Continue your main program here
-            printf("Main program continues after child process\n");
+            printf("Main program running process\n");
         }
         // Check if the user wants to exit
         if (strcmp(args[0], exit_command) == 0) {
