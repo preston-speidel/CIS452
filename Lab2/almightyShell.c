@@ -2,6 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/resource.h> 
 
 int main() {
     char input[100]; // Buffer to store user input
@@ -61,6 +64,21 @@ int main() {
         } else {
             // Wait for the child process to finish
             child = wait(&status);
+            
+            if (child > 0) {
+                // Collect resource usage statistics for the child process
+                struct rusage usage;
+                if (getrusage(RUSAGE_CHILDREN, &usage) == 0) {
+                    printf("User CPU time used: %ld.%06ld seconds\n",
+                           usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
+                    printf("Involuntary context switches: %ld\n", usage.ru_nivcsw);
+                } else {
+                    perror("getrusage failed");
+                }
+            } else {
+                perror("wait failed");
+            }
+            
             // Continue your main program here
             printf("Main program running process\n");
         }
