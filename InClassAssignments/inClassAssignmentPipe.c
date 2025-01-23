@@ -4,11 +4,11 @@
 #include <string.h>
 
 int main() {
-    int fd[2]; // Array to store pipe ends
+    int fd[2]; 
     int pipeCreationResult;
     pid_t pid;
-    char inputString[500]; // Buffer for input
-    char buffer[500]; // Buffer for reading from the pipe
+    char inputString[500]; 
+    char buffer[500]; 
 
     // Create the pipe
     pipeCreationResult = pipe(fd);
@@ -17,7 +17,7 @@ int main() {
         exit(1);
     }
 
-    // Fork a process
+    // Fork the process
     pid = fork();
 
     if (pid < 0) {
@@ -25,19 +25,22 @@ int main() {
         exit(1);
     } else if (pid == 0) {
         // Child process
-        close(fd[0]); // Close read end
+        // Close read end
+        close(fd[0]); 
         printf("Child: Please enter a message (up to 500 characters): ");
-        fgets(inputString, sizeof(inputString), stdin); // Get input from user
-        write(fd[1], inputString, strlen(inputString) + 1); // Send message to pipe
+        // Get input from user
+        fgets(inputString, sizeof(inputString), stdin); 
+        // Send message to pipe
+        write(fd[1], inputString, strlen(inputString) + 1); 
         printf("Child: Sent message: %s", inputString);
-        close(fd[1]); // Close write end
+        // Close write end
+        close(fd[1]); 
     } else {
         // Parent process
-        close(fd[1]); // Close write end
-        read(fd[0], buffer, sizeof(buffer)); // Read message from pipe
+        close(fd[1]);
+        read(fd[0], buffer, sizeof(buffer));
         printf("Parent: Received message: %s", buffer);
-        close(fd[0]); // Close read end
+        close(fd[0]);
     }
-
     return 0;
 }
