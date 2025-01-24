@@ -1,3 +1,4 @@
+// De
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -6,10 +7,25 @@
 #include <sys/wait.h>
 #include <sys/resource.h> 
 
+void trim_trailing_spaces(char *str) {
+    // Removes trailing spaces or tabs
+    int length = strlen(str);
+    while (length > 0 && (str[length - 1] == ' ' || str[length - 1] == '\t')) {
+        str[length - 1] = '\0'; // Replace trailing spaces/tabs with null terminator
+        length--;
+    }
+}
+
 int main() {
-    char input[100]; // Buffer to store user input
     const char *exit_command = "exit"; // Command to exit the program
     const char *clear_command = "clear";
+    
+    //vars for dynamic string input
+    char *input = NULL;
+    char *input_copy;
+    char *token;
+    char *tokens[75]; // Array to hold tokens
+    int i = 0; //counter
 
     //clear the terminal to give an immersive experience
     system("clear");
@@ -18,30 +34,43 @@ int main() {
 
     while (1) { // Infinite loop to continuously prompt the user
         printf("~ "); // Shell-like prompt
-        fgets(input, sizeof(input), stdin); // Get user input (supports spaces)
+        i = 0; // Reset token counter
         
+        // Allocate memory for the input string
+        input = malloc(100);
+        fgets(input, 100, stdin); // Get user input (supports spaces)
+        
+
         // Remove trailing newline character from input
         input[strcspn(input, "\n")] = 0;
 
-        //tokenize input
-        char *args[2]; //
-        char *lineptr = input;               // Pointer to the string
-        /*
-            Finds the first occurrence of a delimiter in the string.
-            Replaces the delimiter with a null terminator (\0).
-            Returns the token (a pointer to the start of the string segment).
-            Updates the pointer (lineptr) to point to the remaining part of the string.
-        */
-        args[0] = strsep(&lineptr, " "); //command
-        // args[1] = strsep(&lineptr, " "); // flag
-        // args[2] = strsep(&lineptr, " "); // flag
-        args[1] = NULL;
+        // Remove trailing spaces/tabs
+        trim_trailing_spaces(input);
 
-        // Ensure that we have exactly 3 arguments
-        // if (args[0] == NULL || args[1] == NULL || args[2] == NULL) {
-        if (args[0] == NULL) {
-            printf("Error: Please enter exactly one\n");
-            return 1;  // Exit with error code
+        //create copy of string to format for the exe call
+        input_copy = strdup(input);
+        if (input_copy == NULL) {
+            perror("strdup");
+            free(input);
+            return 1;
+        }
+        // Tokenize and store each token
+        while ((token = strsep(&input_copy, " ")) != NULL) {
+            if (*token != '\0') { // Skip empty tokens (caused by consecutive spaces)
+                tokens[i++] = token;
+            }
+        }
+        //reallocate the memory used
+        free(input);
+        tokens[i] = NULL; // Null-terminate the tokens array
+        
+
+        // Check if the user wants to exit
+        if (strcmp(tokens[0], exit_command) == 0) {
+            printf("Exiting shell...\n");
+            //clear input
+            memset(tokens, '\0', sizeof(tokens));
+            break;
         }
 
         // Create a child process using fork()
@@ -57,20 +86,20 @@ int main() {
 
         if (pid == 0) {
             // Child process - execute the command
-            if (execvp(args[0], args) == -1) {
+            if (execvp(tokens[0], tokens) == -1) {
                 perror("execvp failed");
                 return 1;
             }
         } else {
             // Wait for the child process to finish
             child = wait(&status);
-            
+            // Continue your main program here
             if (child > 0) {
                 // Collect resource usage statistics for the child process
                 struct rusage usage;
                 if (getrusage(RUSAGE_CHILDREN, &usage) == 0) {
-                    printf("User CPU time used: %ld.%06ld seconds\n",
-                           usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
+                    printf("\nclareUser CPU time used: %ld.%06ld seconds\n",
+                        usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
                     printf("Involuntary context switches: %ld\n", usage.ru_nivcsw);
                 } else {
                     perror("getrusage failed");
@@ -78,15 +107,10 @@ int main() {
             } else {
                 perror("wait failed");
             }
-            
-            // Continue your main program here
-            printf("Main program running process\n");
+            printf("Main program running\n");
         }
-        // Check if the user wants to exit
-        if (strcmp(args[0], exit_command) == 0) {
-            printf("Exiting shell...\n");
-            break;
-        }
+        //clear input fo new input
+        memset(tokens, '\0', sizeof(tokens));
     }
 
     return 0;
