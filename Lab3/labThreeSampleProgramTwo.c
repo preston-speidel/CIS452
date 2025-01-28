@@ -28,14 +28,27 @@ int main(){
     int output = 3;
     int input;
 
+    char myStringOutput[] = "This a test!";
+    char myStringInput[50];
+
     if(pid == 0){
         // Child process
-        write(fd[1], &output, sizeof(int));
-        printf("Child wrote [%d]\n", output);
+        // Close unused read end
+        close(fd[READ]); 
+        // Write the string
+        write(fd[WRITE], myStringOutput, strlen(myStringOutput) + 1); 
+        printf("Child wrote: %s\n", myStringOutput);
+        // Close the write end
+        close(fd[WRITE]); 
     }
     else{
-        read(fd[0], &input, sizeof(int));
-        printf("Parent received [%d] from child process\n", input);
+        // Close unused write end
+        close(fd[WRITE]); 
+        // Read the string
+        ssize_t bytesRead = read(fd[READ], myStringInput, sizeof(myStringInput)); 
+        printf("Parent received: %s from child process (Bytes read: %ld)\n", myStringInput, bytesRead);
+        // Close the read end
+        close(fd[READ]); 
     }
     
     return 0;
