@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <unistd.h>
 
 #define FOO 4096
 
@@ -29,6 +30,8 @@ int main ()
 
     printf("Value a: %p\t Value b: %p\n", (void *) sharedMemoryPtr, (void *) sharedMemoryPtr + FOO);
     printf("Shared memory segment size: %ld bytes\n", size.shm_segsz);
+    //printf("Shared Memory ID: %d\n", shmId);
+    //pause();
 
     if(shmdt (sharedMemoryPtr) < 0) {
         perror ("Unable to detach\n");
