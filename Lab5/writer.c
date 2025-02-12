@@ -1,3 +1,5 @@
+// Created by Preston Speidel and Devonte Hillman with the assistance of chatgpt
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
