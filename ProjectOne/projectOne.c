@@ -8,7 +8,7 @@
 #include <sys/types.h>
 
 #define MAX_MESSAGE_LEN 100
-#define MAX_NODES       100
+#define MAX_NODES 100
 
 // We'll have k pipes (one per link in the ring).
 // pipeArray[i][0] = read end  for link i
@@ -31,21 +31,24 @@ void runChildNode(int nodeID) {
     // read from pipeArray[nodeID-1][0] and write to pipeArray[nodeID][1]
     // consider wrapping for node 0..(k-1). The read link is (nodeID-1 + k) % k.
     int readLink = (nodeID - 1 + nodeCount) % nodeCount;
-    int writeLink = nodeID; // node i writes to link i
+    // node i writes to link i
+    int writeLink = nodeID; 
 
     // Close all pipe ends this node doesn't need
     for (int j = 0; j < nodeCount; j++) {
         if (j != readLink) {
-            close(pipeArray[j][0]); // not reading from these
+            // not reading from these
+            close(pipeArray[j][0]); 
         }
         if (j != writeLink) {
-            close(pipeArray[j][1]); // not writing to these
+            // not writing to these
+            close(pipeArray[j][1]); 
         }
     }
 
     while (1) {
         char buffer[MAX_MESSAGE_LEN];
-        // Read message from our readLink
+        // Read message from the readLink
         int bytes = read(pipeArray[readLink][0], buffer, MAX_MESSAGE_LEN);
         if (bytes <= 0) {
             fprintf(stderr, "[Node %d] Error reading, exiting.\n", nodeID);
@@ -55,11 +58,11 @@ void runChildNode(int nodeID) {
         printf("[Node %d] Received: %s\n", nodeID, buffer);
         fflush(stdout);
 
-        // If it's not "empty", parse destination
+        // If it's not "empty", parse destination the message is in the format destination:message
         if (strcmp(buffer, "empty") != 0) {
             int destination;
             sscanf(buffer, "%d:", &destination);
-            // If we are the destination node
+            // If it is the destination node
             if (destination == nodeID) {
                 printf("[Node %d] Message received: %s\n", nodeID, buffer + 2);
                 fflush(stdout);
@@ -78,7 +81,8 @@ void runChildNode(int nodeID) {
 
 int main() {
     parentPid = getpid();
-    signal(SIGINT, handleSIGINT); // Catch Ctrl+C
+    // Catch Ctrl+C
+    signal(SIGINT, handleSIGINT); 
 
     printf("Enter number of nodes (k): ");
     fflush(stdout);
@@ -117,8 +121,10 @@ int main() {
         close(pipeArray[j][0]);
         close(pipeArray[j][1]);
     }
-    close(pipeArray[0][0]);           // don't need read end of link 0
-    if (nodeCount > 1) close(pipeArray[nodeCount - 1][1]); // don't write to link k-1
+    // don't need read end of link 0
+    close(pipeArray[0][0]);     
+    // don't write to link k-1      
+    if (nodeCount > 1) close(pipeArray[nodeCount - 1][1]); 
 
     // Clear leftover newline from the scanf
     int dummy;
