@@ -5,7 +5,8 @@
 #include <stdlib.h>
 
 int main() {
-    size_t size = 1024 * 1024; // Start with 1MB
+    // Start with 1MB
+    size_t size = 1024 * 1024; 
     int shmid;
 
     printf("Determining maximum shared memory segment size...\n");
@@ -16,9 +17,11 @@ int main() {
             printf("Maximum shared memory segment size found: %zu bytes\n", size / 1024 / 1024);
             break;
         } else {
-            shmctl(shmid, IPC_RMID, NULL); // Remove segment
+            // Remove segment
+            shmctl(shmid, IPC_RMID, NULL); 
         }
-        size += 1024 * 1024; // Increase by 1MB
+        // Increase by 1MB
+        size += 1024 * 1024; 
     }
 
     return 0;

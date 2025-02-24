@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <semaphore.h>
-#include <fcntl.h>      // For O_CREAT
-#include <errno.h>      // For error handling
-#include <stdlib.h>     // For exit()
+#include <fcntl.h>
+#include <errno.h>
+#include <stdlib.h>
 
 int main() {
     sem_t *sem;
@@ -20,7 +20,7 @@ int main() {
         max_value++;
     }
 
-    // sem_post failed, meaning we've reached the limit
+    // sem_post failed meaning it reached the limit
     printf("Empirically determined maximum value of a counting semaphore: %d\n", max_value);
 
     // Cleanup
