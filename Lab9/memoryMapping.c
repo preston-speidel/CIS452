@@ -2,11 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Global variables are stored in the Data and BSS segments.
-// Initialized global variable: Data segment.
+// Initialized global variable
 int global_init = 100;
 
-// Uninitialized global variable: BSS segment.
+// Uninitialized global variable
 int global_uninit;
 
 // sampleFunction is part of the Text segment (code segment).
@@ -21,7 +20,8 @@ void sampleFunction() {
  * Comparing the addresses between recursive calls shows the growth direction.
  */
 void recursiveStack(int depth, void *prev_address) {
-    int local;  // Local variable resides on the stack.
+    // Local variable resides on the stack.
+    int local;  
     printf("Depth %d, address of local variable: %p", depth, (void *)&local);
     
     // If we have a previous address, compare it with the current one.
@@ -35,25 +35,25 @@ void recursiveStack(int depth, void *prev_address) {
         printf("\n");
     }
     
-    // Limit recursion to prevent too deep recursion.
+    // Limits the recursion
     if (depth < 5) {
         recursiveStack(depth + 1, (void *)&local);
     }
 }
 
 int main(void) {
-    // Print the address of main (Text segment).
+    // Print the address of main (Text segment)
     printf("Address of main (Text segment): %p\n", (void *)main);
     
-    // Call sampleFunction to print its address (Text segment).
+    // Call sampleFunction to print its address (Text segment)
     sampleFunction();
     
-    // Print addresses of global variables (Data and BSS segments).
+    // Print addresses of global variables
     printf("Address of global_init (Initialized Data): %p\n", (void *)&global_init);
-    printf("Address of global_uninit (BSS): %p\n", (void *)&global_uninit);
+    printf("Address of global_uninit (Uninitalized BSS): %p\n", (void *)&global_uninit);
     
-    // Demonstrate Heap segment:
-    // Allocate two small blocks on the heap.
+    // Heap segment:
+    // Allocates two small blocks on the heap
     int *heap1 = malloc(sizeof(int));
     int *heap2 = malloc(sizeof(int));
     if (heap1 == NULL || heap2 == NULL) {
@@ -63,19 +63,19 @@ int main(void) {
     printf("Address of first heap allocation (Heap): %p\n", (void *)heap1);
     printf("Address of second heap allocation (Heap): %p\n", (void *)heap2);
     
-    // Determine growth direction for the heap:
+    // Determines the growth direction for the heap
     if (heap2 > heap1) {
         printf("Heap appears to grow upward (increasing addresses).\n");
     } else {
         printf("Heap appears to grow downward (decreasing addresses).\n");
     }
     
-    // Demonstrate Stack segment:
-    // Local variable in main shows an address on the stack.
+    // Stack segment
+    // Local variable in main shows an address on the stack
     int local_var = 0;
     printf("Address of a local variable in main (Stack): %p\n", (void *)&local_var);
     
-    // Use a recursive function to illustrate how the stack grows.
+    // recursive function to illustrate how the stack grows
     printf("\nDemonstrating stack growth with recursive function:\n");
     recursiveStack(1, NULL);
     
