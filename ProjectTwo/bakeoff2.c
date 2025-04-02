@@ -168,7 +168,7 @@ void pizza(Kitchen* kitchen, int pantryId, int refrigId, int id){
     printf("%sBaker %d is using refrig %d.\n", color, id, refrigId);
 
     //pizza dough: Yeast, Sugar, Salt
-    sem_wait(&kitchen->pantry[pantryId].flour);
+    sem_wait(&kitchen->pantry[pantryId].yeast);
     sem_wait(&kitchen->pantry[pantryId].sugar);
     sem_wait(&kitchen->pantry[pantryId].salt);
 
@@ -182,7 +182,7 @@ void pizza(Kitchen* kitchen, int pantryId, int refrigId, int id){
     printf("%sBaker %d made pizza\n", color, id);
 
     // Release semaphores
-    sem_post(&kitchen->pantry[pantryId].flour);
+    sem_post(&kitchen->pantry[pantryId].yeast);
     sem_post(&kitchen->pantry[pantryId].sugar);
     sem_post(&kitchen->pantry[pantryId].salt);
     sem_post(&kitchen->mixer);
@@ -239,7 +239,7 @@ void cinnamonRolls(Kitchen* kitchen, int pantryId, int refrigId, int id){
     printf("%sBaker %d is using pantry %d.\n", color, id, pantryId);
     printf("%sBaker %d is using refrig %d.\n", color, id, refrigId);
 
-    //Cinnamon rolls: Flour, Sugar, Salt, Cinnamon, Butter, Eggs, 
+    //Cinnamon rolls: Flour, Sugar, Salt, Cinnamon, Butter, Eggs 
     sem_wait(&kitchen->pantry[pantryId].flour);
     sem_wait(&kitchen->pantry[pantryId].sugar);
     sem_wait(&kitchen->pantry[pantryId].salt);
@@ -247,7 +247,7 @@ void cinnamonRolls(Kitchen* kitchen, int pantryId, int refrigId, int id){
     sem_wait(&kitchen->refrig[refrigId].butter);
     sem_wait(&kitchen->refrig[refrigId].eggs);
 
-    printf("%sBaker %d: Gathered (Flour, Sugar, Salt, Cinnamon, Butter, Eggs, ).\n", color, id);
+    printf("%sBaker %d: Gathered (Flour, Sugar, Salt, Cinnamon, Butter, Eggs).\n", color, id);
 
     // Simulate baking process
     sem_wait(&kitchen->mixer);
@@ -260,8 +260,8 @@ void cinnamonRolls(Kitchen* kitchen, int pantryId, int refrigId, int id){
     sem_post(&kitchen->pantry[pantryId].flour);
     sem_post(&kitchen->pantry[pantryId].sugar);
     sem_post(&kitchen->pantry[pantryId].salt);
-    sem_post(&kitchen->pantry[pantryId].yeast);
-    sem_post(&kitchen->pantry[pantryId].baking_soda);
+    sem_post(&kitchen->pantry[pantryId].cinnamon);
+    sem_post(&kitchen->refrig[pantryId].butter);
     sem_post(&kitchen->refrig[refrigId].eggs);
     sem_post(&kitchen->mixer);
     sem_post(&kitchen->bowl);
