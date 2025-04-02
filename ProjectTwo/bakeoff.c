@@ -57,8 +57,8 @@ void initKitchen(Kitchen* kitchen){
 //Cookies: Flour, Sugar, Milk, Butter 
 void cookie(Kitchen* kitchen, int pantryId, int refrigId, int id){
     printf("Baker %d: Gathering ingredients for baking cookies...\n", id);
-    printf("Baker is using pantry%d", pantryId);
-    printf("Baker is using refig%d", refrigId);
+    printf("Baker %d is using pantry %d.\n",id , pantryId);
+    printf("Baker %d is using refig %d.\n",id , refrigId);
     
     sem_wait(&kitchen->pantry[pantryId].flour);
     sem_wait(&kitchen->pantry[pantryId].sugar);
@@ -68,7 +68,6 @@ void cookie(Kitchen* kitchen, int pantryId, int refrigId, int id){
     printf("Baker %d: Gathered (Flour, Sugar, Milk, Butter).\n", id);
 
     // Simulate baking process
-    sleep(2);
 
     // Gather kitchen appliances
 
@@ -77,19 +76,18 @@ void cookie(Kitchen* kitchen, int pantryId, int refrigId, int id){
     sem_post(&kitchen->pantry[pantryId].sugar);
     sem_post(&kitchen->refrig[refrigId].milk);
     sem_post(&kitchen->refrig[refrigId].butter);
-    sleep(1);  // Simulate gathering supplies
     printf("Baker %d: Returned (Flour, Sugar, Milk, Butter).\n", id);
     };
 
 void* bakersBake(void* arg){
     Kitchen* kitchen = (Kitchen*)arg;
     int id = *(int*)arg;
-    int refig = id % NUM_REFRIG;
-    int pantry = id % NUM_PANTRY;
+    int refigNum = id % NUM_REFRIG;
+    int pantryNum = id % NUM_PANTRY;
     
-    cookie(kitchen, pantry, refig id );
+    cookie(kitchen, pantryNum, refigNum, id);
 
-    return;
+    return NULL;
 }
 
 int main(){
@@ -102,7 +100,7 @@ int main(){
     //create baker threads
     for(int i = 0; i < NUM_BAKER; i++){
         bakerIds[i] = i + 1;
-        pthread_create(&baker[i], NULL, bakersBake, &kitchen);
+        pthread_create(&baker[i], NULL, bakersBake, &bakerIds[i]);
     }
 
     // Wait for all baker threads to finish
