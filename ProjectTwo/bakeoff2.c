@@ -3,10 +3,18 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <unistd.h>
+#include <stdbool.h>
+#include <time.h>
 
 #define NUM_PANTRY 1
 #define NUM_REFRIG 2
 #define NUM_BAKER 3
+
+// global variable for the selected baker for Ramsied
+int selected_baker = 1;
+
+// global flag to ensure Ramsied only happens once
+bool ramsiedTriggered = false;
 
 // ANSI color codes
 #define RED     "\x1B[31m"
@@ -87,188 +95,284 @@ void initKitchen(Kitchen* kitchen) {
 void cookie(Kitchen* kitchen, int pantryId, int refrigId, int id) {
     const char* color = getThreadColor(id);
 
-    printf("%sBaker %d: Gathering ingredients for baking cookies...\n", color, id);
-    printf("%sBaker %d is using pantry %d.\n", color, id, pantryId);
-    printf("%sBaker %d is using refrig %d.\n", color, id, refrigId);
+    // loop to allow the recipe to restart if Ramsied
+    while (1){
+        printf("%sBaker %d: Gathering ingredients for baking cookies...\n", color, id);
+        printf("%sBaker %d is using pantry %d.\n", color, id, pantryId);
+        printf("%sBaker %d is using refrig %d.\n", color, id, refrigId);
+    
+        // Cookies: Flour, Sugar, Milk, Butter 
+        sem_wait(&kitchen->pantry[pantryId].flour);
+        sem_wait(&kitchen->pantry[pantryId].sugar);
+        sem_wait(&kitchen->refrig[refrigId].milk);
+        sem_wait(&kitchen->refrig[refrigId].butter);
+    
+        printf("%sBaker %d: Gathered (Flour, Sugar, Milk, Butter).\n", color, id);
 
-    // Cookies: Flour, Sugar, Milk, Butter 
-    sem_wait(&kitchen->pantry[pantryId].flour);
-    sem_wait(&kitchen->pantry[pantryId].sugar);
-    sem_wait(&kitchen->refrig[refrigId].milk);
-    sem_wait(&kitchen->refrig[refrigId].butter);
+        // check for Ramsied event and if it is triggered release the resources
+        // 50% chance to trigger Ramsied
+        if (id == selected_baker && !ramsiedTriggered && (rand() % 2 == 0)) {
+            printf("%sBaker %d: Ramsied! Releasing ingredients and restarting recipe...\n", color, id);
+            sem_post(&kitchen->pantry[pantryId].flour);
+            sem_post(&kitchen->pantry[pantryId].sugar);
+            sem_post(&kitchen->refrig[refrigId].milk);
+            sem_post(&kitchen->refrig[refrigId].butter);
+            ramsiedTriggered = true;
+            continue;
+        }
+    
+        // Simulate baking process
+        sem_wait(&kitchen->mixer);
+        sem_wait(&kitchen->bowl);
+        sem_wait(&kitchen->spoon);
+        sem_wait(&kitchen->oven);
+        printf("%sBaker %d made cookies\n", color, id);
+    
+        // Release semaphores
+        sem_post(&kitchen->pantry[pantryId].flour);
+        sem_post(&kitchen->pantry[pantryId].sugar);
+        sem_post(&kitchen->refrig[refrigId].milk);
+        sem_post(&kitchen->refrig[refrigId].butter);
+        sem_post(&kitchen->mixer);
+        sem_post(&kitchen->bowl);
+        sem_post(&kitchen->spoon);
+        sem_post(&kitchen->oven);
+        printf("%sBaker %d: Returned (Flour, Sugar, Milk, Butter).\n", color, id);
+        printf("%sBaker %d: Returned (Mixer, Bowl, Spoon, Oven).\n%s", color, id, RESET);
 
-    printf("%sBaker %d: Gathered (Flour, Sugar, Milk, Butter).\n", color, id);
-
-    // Simulate baking process
-    sem_wait(&kitchen->mixer);
-    sem_wait(&kitchen->bowl);
-    sem_wait(&kitchen->spoon);
-    sem_wait(&kitchen->oven);
-    printf("%sBaker %d made cookies\n", color, id);
-
-    // Release semaphores
-    sem_post(&kitchen->pantry[pantryId].flour);
-    sem_post(&kitchen->pantry[pantryId].sugar);
-    sem_post(&kitchen->refrig[refrigId].milk);
-    sem_post(&kitchen->refrig[refrigId].butter);
-    sem_post(&kitchen->mixer);
-    sem_post(&kitchen->bowl);
-    sem_post(&kitchen->spoon);
-    sem_post(&kitchen->oven);
-    printf("%sBaker %d: Returned (Flour, Sugar, Milk, Butter).\n", color, id);
-    printf("%sBaker %d: Returned (Mixer, Bowl, Spoon, Oven).\n%s", color, id, RESET);
+        // recipe completed
+        break; 
+    }
 }
 
 void pancakes(Kitchen* kitchen, int pantryId, int refrigId, int id){
-const char* color = getThreadColor(id);
+    const char* color = getThreadColor(id);
 
-    printf("%sBaker %d: Gathering ingredients for baking Pancakes...\n", color, id);
-    printf("%sBaker %d is using pantry %d.\n", color, id, pantryId);
-    printf("%sBaker %d is using refrig %d.\n", color, id, refrigId);
+    // loop to allow the recipe to restart if Ramsied
+    while (1){
+        printf("%sBaker %d: Gathering ingredients for baking Pancakes...\n", color, id);
+        printf("%sBaker %d is using pantry %d.\n", color, id, pantryId);
+        printf("%sBaker %d is using refrig %d.\n", color, id, refrigId);
 
-    //Pancakes: Flour, Sugar, Baking soda, Salt, Egg, Milk, Butter
-    sem_wait(&kitchen->pantry[pantryId].flour);
-    sem_wait(&kitchen->pantry[pantryId].sugar);
-    sem_wait(&kitchen->pantry[pantryId].baking_soda);
-    sem_wait(&kitchen->pantry[pantryId].salt);
-    sem_wait(&kitchen->refrig[refrigId].eggs);
-    sem_wait(&kitchen->refrig[refrigId].milk);
-    sem_wait(&kitchen->refrig[refrigId].butter);
+        //Pancakes: Flour, Sugar, Baking soda, Salt, Egg, Milk, Butter
+        sem_wait(&kitchen->pantry[pantryId].flour);
+        sem_wait(&kitchen->pantry[pantryId].sugar);
+        sem_wait(&kitchen->pantry[pantryId].baking_soda);
+        sem_wait(&kitchen->pantry[pantryId].salt);
+        sem_wait(&kitchen->refrig[refrigId].eggs);
+        sem_wait(&kitchen->refrig[refrigId].milk);
+        sem_wait(&kitchen->refrig[refrigId].butter);
 
-    printf("%sBaker %d: Gathered (Flour, Sugar, Baking soda, Salt, Egg, Milk, Butter).\n", color, id);
+        printf("%sBaker %d: Gathered (Flour, Sugar, Baking soda, Salt, Egg, Milk, Butter).\n", color, id);
 
-    // Simulate baking process
-    sem_wait(&kitchen->mixer);
-    sem_wait(&kitchen->bowl);
-    sem_wait(&kitchen->spoon);
-    sem_wait(&kitchen->oven);
-    printf("%sBaker %d made pancakes\n", color, id);
+        // check for Ramsied event and if it is triggered release the resources
+        // 50% chance to trigger Ramsied
+        if (id == selected_baker && !ramsiedTriggered && (rand() % 2 == 0)) {
+            printf("%sBaker %d: Ramsied! Releasing ingredients and restarting recipe...\n", color, id);
+            sem_post(&kitchen->pantry[pantryId].flour);
+            sem_post(&kitchen->pantry[pantryId].sugar);
+            sem_post(&kitchen->pantry[pantryId].baking_soda);
+            sem_post(&kitchen->pantry[pantryId].salt);
+            sem_post(&kitchen->refrig[refrigId].eggs);
+            sem_post(&kitchen->refrig[refrigId].milk);
+            sem_post(&kitchen->refrig[refrigId].butter);
+            ramsiedTriggered = true;
+            continue;
+        }
 
-    // Release semaphores
-    sem_post(&kitchen->pantry[pantryId].flour);
-    sem_post(&kitchen->pantry[pantryId].sugar);
-    sem_post(&kitchen->pantry[pantryId].baking_soda);
-    sem_post(&kitchen->pantry[pantryId].salt);
-    sem_post(&kitchen->refrig[refrigId].eggs);
-    sem_post(&kitchen->refrig[refrigId].milk);
-    sem_post(&kitchen->refrig[refrigId].butter);
-    sem_post(&kitchen->mixer);
-    sem_post(&kitchen->bowl);
-    sem_post(&kitchen->spoon);
-    sem_post(&kitchen->oven);
-    printf("%sBaker %d: Returned (Flour, Sugar, Baking soda, Salt, Egg, Milk, Butter).\n", color, id);
-    printf("%sBaker %d: Returned (Mixer, Bowl, Spoon, Oven).\n%s", color, id, RESET);
+        // Simulate baking process
+        sem_wait(&kitchen->mixer);
+        sem_wait(&kitchen->bowl);
+        sem_wait(&kitchen->spoon);
+        sem_wait(&kitchen->oven);
+        printf("%sBaker %d made pancakes\n", color, id);
+
+        // Release semaphores
+        sem_post(&kitchen->pantry[pantryId].flour);
+        sem_post(&kitchen->pantry[pantryId].sugar);
+        sem_post(&kitchen->pantry[pantryId].baking_soda);
+        sem_post(&kitchen->pantry[pantryId].salt);
+        sem_post(&kitchen->refrig[refrigId].eggs);
+        sem_post(&kitchen->refrig[refrigId].milk);
+        sem_post(&kitchen->refrig[refrigId].butter);
+        sem_post(&kitchen->mixer);
+        sem_post(&kitchen->bowl);
+        sem_post(&kitchen->spoon);
+        sem_post(&kitchen->oven);
+        printf("%sBaker %d: Returned (Flour, Sugar, Baking soda, Salt, Egg, Milk, Butter).\n", color, id);
+        printf("%sBaker %d: Returned (Mixer, Bowl, Spoon, Oven).\n%s", color, id, RESET);
+
+        // recipe completed
+        break; 
+    }
 }
 
 void pizza(Kitchen* kitchen, int pantryId, int refrigId, int id){
     const char* color = getThreadColor(id);
 
-    printf("%sBaker %d: Gathering ingredients for baking pizza...\n", color, id);
-    printf("%sBaker %d is using pantry %d.\n", color, id, pantryId);
-    printf("%sBaker %d is using refrig %d.\n", color, id, refrigId);
+    // loop to allow the recipe to restart if Ramsied
+    while (1){
+        printf("%sBaker %d: Gathering ingredients for baking pizza...\n", color, id);
+        printf("%sBaker %d is using pantry %d.\n", color, id, pantryId);
+        printf("%sBaker %d is using refrig %d.\n", color, id, refrigId);
 
-    //pizza dough: Yeast, Sugar, Salt
-    sem_wait(&kitchen->pantry[pantryId].yeast);
-    sem_wait(&kitchen->pantry[pantryId].sugar);
-    sem_wait(&kitchen->pantry[pantryId].salt);
+        //pizza dough: Yeast, Sugar, Salt
+        sem_wait(&kitchen->pantry[pantryId].yeast);
+        sem_wait(&kitchen->pantry[pantryId].sugar);
+        sem_wait(&kitchen->pantry[pantryId].salt);
 
-    printf("%sBaker %d: Gathered (Yeast, Sugar, Salt).\n", color, id);
+        printf("%sBaker %d: Gathered (Yeast, Sugar, Salt).\n", color, id);
 
-    // Simulate baking process
-    sem_wait(&kitchen->mixer);
-    sem_wait(&kitchen->bowl);
-    sem_wait(&kitchen->spoon);
-    sem_wait(&kitchen->oven);
-    printf("%sBaker %d made pizza\n", color, id);
+        // check for Ramsied event and if it is triggered release the resources
+        // 50% chance to trigger Ramsied
+        if (id == selected_baker && !ramsiedTriggered && (rand() % 2 == 0)) {
+            printf("%sBaker %d: Ramsied! Releasing ingredients and restarting recipe...\n", color, id);
+            sem_post(&kitchen->pantry[pantryId].yeast);
+            sem_post(&kitchen->pantry[pantryId].sugar);
+            sem_post(&kitchen->pantry[pantryId].salt);
+            ramsiedTriggered = true;
+            continue;
+        }
 
-    // Release semaphores
-    sem_post(&kitchen->pantry[pantryId].yeast);
-    sem_post(&kitchen->pantry[pantryId].sugar);
-    sem_post(&kitchen->pantry[pantryId].salt);
-    sem_post(&kitchen->mixer);
-    sem_post(&kitchen->bowl);
-    sem_post(&kitchen->spoon);
-    sem_post(&kitchen->oven);
-    printf("%sBaker %d: Returned (Yeast, Sugar, Salt).\n", color, id);
-    printf("%sBaker %d: Returned (Mixer, Bowl, Spoon, Oven).\n%s", color, id, RESET);
+        // Simulate baking process
+        sem_wait(&kitchen->mixer);
+        sem_wait(&kitchen->bowl);
+        sem_wait(&kitchen->spoon);
+        sem_wait(&kitchen->oven);
+        printf("%sBaker %d made pizza\n", color, id);
+
+        // Release semaphores
+        sem_post(&kitchen->pantry[pantryId].yeast);
+        sem_post(&kitchen->pantry[pantryId].sugar);
+        sem_post(&kitchen->pantry[pantryId].salt);
+        sem_post(&kitchen->mixer);
+        sem_post(&kitchen->bowl);
+        sem_post(&kitchen->spoon);
+        sem_post(&kitchen->oven);
+        printf("%sBaker %d: Returned (Yeast, Sugar, Salt).\n", color, id);
+        printf("%sBaker %d: Returned (Mixer, Bowl, Spoon, Oven).\n%s", color, id, RESET);
+
+        // recipe completed
+        break; 
+    }
 }
 
 void pretzels(Kitchen* kitchen, int pantryId, int refrigId, int id){
     const char* color = getThreadColor(id);
 
-    printf("%sBaker %d: Gathering ingredients for pretzels...\n", color, id);
-    printf("%sBaker %d is using pantry %d.\n", color, id, pantryId);
-    printf("%sBaker %d is using refrig %d.\n", color, id, refrigId);
+    // loop to allow the recipe to restart if Ramsied
+    while (1){
+        printf("%sBaker %d: Gathering ingredients for pretzels...\n", color, id);
+        printf("%sBaker %d is using pantry %d.\n", color, id, pantryId);
+        printf("%sBaker %d is using refrig %d.\n", color, id, refrigId);
 
-    //Soft Pretzels: Flour, Sugar, Salt, Yeast, Baking Soda, Egg
-    sem_wait(&kitchen->pantry[pantryId].flour);
-    sem_wait(&kitchen->pantry[pantryId].sugar);
-    sem_wait(&kitchen->pantry[pantryId].salt);
-    sem_wait(&kitchen->pantry[pantryId].yeast);
-    sem_wait(&kitchen->pantry[pantryId].baking_soda);
-    sem_wait(&kitchen->refrig[refrigId].eggs);
+        //Soft Pretzels: Flour, Sugar, Salt, Yeast, Baking Soda, Egg
+        sem_wait(&kitchen->pantry[pantryId].flour);
+        sem_wait(&kitchen->pantry[pantryId].sugar);
+        sem_wait(&kitchen->pantry[pantryId].salt);
+        sem_wait(&kitchen->pantry[pantryId].yeast);
+        sem_wait(&kitchen->pantry[pantryId].baking_soda);
+        sem_wait(&kitchen->refrig[refrigId].eggs);
 
-    printf("%sBaker %d: Gathered (Flour, Sugar, Salt, Yeast, Baking Soda, Egg).\n", color, id);
+        printf("%sBaker %d: Gathered (Flour, Sugar, Salt, Yeast, Baking Soda, Egg).\n", color, id);
 
-    // Simulate baking process
-    sem_wait(&kitchen->mixer);
-    sem_wait(&kitchen->bowl);
-    sem_wait(&kitchen->spoon);
-    sem_wait(&kitchen->oven);
-    printf("%sBaker %d made pretzels \n", color, id);
+        // check for Ramsied event and if it is triggered release the resources
+        // 50% chance to trigger Ramsied
+        if (id == selected_baker && !ramsiedTriggered && (rand() % 2 == 0)) {
+            printf("%sBaker %d: Ramsied! Releasing ingredients and restarting recipe...\n", color, id);
+            sem_post(&kitchen->pantry[pantryId].flour);
+            sem_post(&kitchen->pantry[pantryId].sugar);
+            sem_post(&kitchen->pantry[pantryId].salt);
+            sem_post(&kitchen->pantry[pantryId].yeast);
+            sem_post(&kitchen->pantry[pantryId].baking_soda);
+            sem_post(&kitchen->refrig[refrigId].eggs);
+            ramsiedTriggered = true;
+            continue;
+        }
 
-    // Release semaphores
-    sem_post(&kitchen->pantry[pantryId].flour);
-    sem_post(&kitchen->pantry[pantryId].sugar);
-    sem_post(&kitchen->pantry[pantryId].salt);
-    sem_post(&kitchen->pantry[pantryId].yeast);
-    sem_post(&kitchen->pantry[pantryId].baking_soda);
-    sem_post(&kitchen->refrig[refrigId].eggs);
-    sem_post(&kitchen->mixer);
-    sem_post(&kitchen->bowl);
-    sem_post(&kitchen->spoon);
-    sem_post(&kitchen->oven);
-    printf("%sBaker %d: Returned (Flour, Sugar, Salt, Yeast, Baking Soda, Egg).\n", color, id);
-    printf("%sBaker %d: Returned (Mixer, Bowl, Spoon, Oven).\n%s", color, id, RESET);
+        // Simulate baking process
+        sem_wait(&kitchen->mixer);
+        sem_wait(&kitchen->bowl);
+        sem_wait(&kitchen->spoon);
+        sem_wait(&kitchen->oven);
+        printf("%sBaker %d made pretzels \n", color, id);
+
+        // Release semaphores
+        sem_post(&kitchen->pantry[pantryId].flour);
+        sem_post(&kitchen->pantry[pantryId].sugar);
+        sem_post(&kitchen->pantry[pantryId].salt);
+        sem_post(&kitchen->pantry[pantryId].yeast);
+        sem_post(&kitchen->pantry[pantryId].baking_soda);
+        sem_post(&kitchen->refrig[refrigId].eggs);
+        sem_post(&kitchen->mixer);
+        sem_post(&kitchen->bowl);
+        sem_post(&kitchen->spoon);
+        sem_post(&kitchen->oven);
+        printf("%sBaker %d: Returned (Flour, Sugar, Salt, Yeast, Baking Soda, Egg).\n", color, id);
+        printf("%sBaker %d: Returned (Mixer, Bowl, Spoon, Oven).\n%s", color, id, RESET);
+
+        // recipe completed
+        break; 
+    }
 }
 
 void cinnamonRolls(Kitchen* kitchen, int pantryId, int refrigId, int id){
     const char* color = getThreadColor(id);
 
-    printf("%sBaker %d: Gathering ingredients for baking Cinnamon Rolls...\n", color, id);
-    printf("%sBaker %d is using pantry %d.\n", color, id, pantryId);
-    printf("%sBaker %d is using refrig %d.\n", color, id, refrigId);
+    // loop to allow the recipe to restart if Ramsied
+    while (1){
+        printf("%sBaker %d: Gathering ingredients for baking Cinnamon Rolls...\n", color, id);
+        printf("%sBaker %d is using pantry %d.\n", color, id, pantryId);
+        printf("%sBaker %d is using refrig %d.\n", color, id, refrigId);
 
-    //Cinnamon rolls: Flour, Sugar, Salt, Cinnamon, Butter, Eggs 
-    sem_wait(&kitchen->pantry[pantryId].flour);
-    sem_wait(&kitchen->pantry[pantryId].sugar);
-    sem_wait(&kitchen->pantry[pantryId].salt);
-    sem_wait(&kitchen->pantry[pantryId].cinnamon);
-    sem_wait(&kitchen->refrig[refrigId].butter);
-    sem_wait(&kitchen->refrig[refrigId].eggs);
+        //Cinnamon rolls: Flour, Sugar, Salt, Cinnamon, Butter, Eggs 
+        sem_wait(&kitchen->pantry[pantryId].flour);
+        sem_wait(&kitchen->pantry[pantryId].sugar);
+        sem_wait(&kitchen->pantry[pantryId].salt);
+        sem_wait(&kitchen->pantry[pantryId].cinnamon);
+        sem_wait(&kitchen->refrig[refrigId].butter);
+        sem_wait(&kitchen->refrig[refrigId].eggs);
 
-    printf("%sBaker %d: Gathered (Flour, Sugar, Salt, Cinnamon, Butter, Eggs).\n", color, id);
+        printf("%sBaker %d: Gathered (Flour, Sugar, Salt, Cinnamon, Butter, Eggs).\n", color, id);
 
-    // Simulate baking process
-    sem_wait(&kitchen->mixer);
-    sem_wait(&kitchen->bowl);
-    sem_wait(&kitchen->spoon);
-    sem_wait(&kitchen->oven);
-    printf("%sBaker %d made Cinnamon Rolls \n", color, id);
+        // check for Ramsied event and if it is triggered release the resources
+        // 50% chance to trigger Ramsied
+        if (id == selected_baker && !ramsiedTriggered && (rand() % 2 == 0)) {
+            printf("%sBaker %d: Ramsied! Releasing ingredients and restarting recipe...\n", color, id);
+            sem_post(&kitchen->pantry[pantryId].flour);
+            sem_post(&kitchen->pantry[pantryId].sugar);
+            sem_post(&kitchen->pantry[pantryId].salt);
+            sem_post(&kitchen->pantry[pantryId].cinnamon);
+            sem_post(&kitchen->refrig[refrigId].butter);
+            sem_post(&kitchen->refrig[refrigId].eggs);
+            ramsiedTriggered = true;
+            continue;
+        }
 
-    // Release semaphores
-    sem_post(&kitchen->pantry[pantryId].flour);
-    sem_post(&kitchen->pantry[pantryId].sugar);
-    sem_post(&kitchen->pantry[pantryId].salt);
-    sem_post(&kitchen->pantry[pantryId].cinnamon);
-    sem_post(&kitchen->refrig[pantryId].butter);
-    sem_post(&kitchen->refrig[refrigId].eggs);
-    sem_post(&kitchen->mixer);
-    sem_post(&kitchen->bowl);
-    sem_post(&kitchen->spoon);
-    sem_post(&kitchen->oven);
-    printf("%sBaker %d: Returned (Flour, Sugar, Salt, Cinnamon, Butter, Eggs, ).\n", color, id);
-    printf("%sBaker %d: Returned (Mixer, Bowl, Spoon, Oven).\n%s", color, id, RESET);
+        // Simulate baking process
+        sem_wait(&kitchen->mixer);
+        sem_wait(&kitchen->bowl);
+        sem_wait(&kitchen->spoon);
+        sem_wait(&kitchen->oven);
+        printf("%sBaker %d made Cinnamon Rolls \n", color, id);
+
+        // Release semaphores
+        sem_post(&kitchen->pantry[pantryId].flour);
+        sem_post(&kitchen->pantry[pantryId].sugar);
+        sem_post(&kitchen->pantry[pantryId].salt);
+        sem_post(&kitchen->pantry[pantryId].cinnamon);
+        sem_post(&kitchen->refrig[refrigId].butter);
+        sem_post(&kitchen->refrig[refrigId].eggs);
+        sem_post(&kitchen->mixer);
+        sem_post(&kitchen->bowl);
+        sem_post(&kitchen->spoon);
+        sem_post(&kitchen->oven);
+        printf("%sBaker %d: Returned (Flour, Sugar, Salt, Cinnamon, Butter, Eggs, ).\n", color, id);
+        printf("%sBaker %d: Returned (Mixer, Bowl, Spoon, Oven).\n%s", color, id, RESET);
+
+        // recipe completed
+        break; 
+    }
 }
 
 void* bakersBake(void* arg) {
@@ -286,6 +390,9 @@ void* bakersBake(void* arg) {
 }
 
 int main() {
+    // for random number generation
+    srand(time(NULL));
+
     pthread_t baker[NUM_BAKER];
     Kitchen kitchen; 
     ThreadArgs args[NUM_BAKER];  // Proper argument passing
